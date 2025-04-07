@@ -52,6 +52,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #define TIMER_PERIOD_USEC 2500     // 2500 = 2.5 msec, 3500 = 3.5 msec
 
+#define BUZZER_PWM_CHANNEL 3
 
 // Webserver
 AsyncWebServer server(80);
@@ -382,7 +383,7 @@ void startCW() {
   PttTimeoutCnt = PttTimeoutCntStartValue;
   digitalWrite(PTT_OUT, 1);
   digitalWrite(LED1, LOW);
-  ledcWriteTone(3, RotaryEnc_BuzzerFreq.cntVal);
+  ledcWriteTone(BUZZER, RotaryEnc_BuzzerFreq.cntVal);
   if (RotaryEnc_OutPowerMiliWatt.cntVal > 0) {
     LT.txEnable();
     LT.writeCommand(RADIO_SET_TXCONTINUOUSWAVE, 0, 0);
@@ -392,7 +393,7 @@ void startCW() {
 // Stop CW - from TX to FS mode
 void stopCW() {
   digitalWrite(LED1, HIGH);
-  ledcWriteTone(3, 0);
+  ledcWriteTone(BUZZER, 0);
   if (RotaryEnc_OutPowerMiliWatt.cntVal > 0) {
     LT.writeCommand(RADIO_SET_FS, 0, 0);  // This will terminate TXCONTINUOUSWAVE
     LT.rxEnable();                        // No real need for this but it saves power
@@ -491,7 +492,7 @@ void morsePlay ( unsigned char rxd, int dotDelay) {
     //
     for (i = 0; i < morse_len; i++) {
       //startCW();
-      ledcWriteTone(3, 784);  // tone g
+      ledcWriteTone(BUZZER, 784);  // tone g
       if ((m & mask) > 0x00) { // Dash
         delay(dotDelay);
         delay(dotDelay);
@@ -500,7 +501,7 @@ void morsePlay ( unsigned char rxd, int dotDelay) {
         delay(dotDelay);
       }
       //stopCW();
-      ledcWriteTone(3, 0);
+      ledcWriteTone(BUZZER, 0);
       // Dot-wait between played dot/dash
       delay(dotDelay);
       mask = mask >> 1;
@@ -1205,9 +1206,9 @@ void loop()
         display.print(RotaryEncISR.cntVal);
         display.display();
         // Short beep with new tone value
-        ledcWriteTone(3, RotaryEncISR.cntVal);
+        ledcWriteTone(BUZZER, RotaryEncISR.cntVal);
         delay(100);
-        ledcWriteTone(3, 0);
+        ledcWriteTone(BUZZER, 0);
       }
       RotaryEncISR.cntValOld = RotaryEncISR.cntVal;
       //
@@ -1418,15 +1419,16 @@ void IRAM_ATTR onTimer() {
 
 }
 
-
 void setup() {
 
   // Setup pin as output for indicator LED or keying output (via Open-collector tranzistor)
   pinMode(LED1, OUTPUT);    
   // Configure BUZZER functionalities.
-  ledcSetup(3, 8000, 8);   //PWM Channel, Freq, Resolution
-  /// Attach BUZZER pin.
-  ledcAttachPin(BUZZER, 3);  // Pin, Channel
+  ledcAttachChannel(
+    BUZZER, // pin
+    8000,   // frequency Hz
+    8,      // Resolution (bits)
+    BUZZER_PWM_CHANNEL); //  PWM channel
 
   // Mount SPIFFS (filesystem, the HTML files must be flashed too by other utility)
   if (!SPIFFS.begin()) {
@@ -1458,10 +1460,9 @@ void setup() {
   digitalWrite(PTT_OUT, 0);
 
   // Timer for ISR which is processing rotary encoder events
-  timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, TIMER_PERIOD_USEC, true);
-  timerAlarmEnable(timer);
+  timer = timerBegin(1000000); // timer frequency 1MHz, timer resolution 1us
+  timerAttachInterrupt(timer, &onTimer);
+  timerAlarm(timer, TIMER_PERIOD_USEC, true, 0);
 
   RotaryEnc_FreqWord.cntVal  = FreqToRegWord(Frequency);
   RotaryEnc_FreqWord.cntMin  = FreqToRegWord(2400000000);
@@ -1586,19 +1587,19 @@ void setup() {
   //setup hardware pins used by device, then check if device is found
   if (LT.begin(NSS, NRESET, RFBUSY, DIO1, DIO2, DIO3, RX_EN, TX_EN, LORA_DEVICE))  {
     Serial.println(F("SX128x LoRa device found"));
-    ledcWriteTone(3, 659);  // tone d
+    ledcWriteTone(BUZZER, 659);  // tone d
     delay(100);
-    ledcWriteTone(3, 0);
+    ledcWriteTone(BUZZER, 0);
     delay(100);
     //
-    ledcWriteTone(3, 659);  // tone d
+    ledcWriteTone(BUZZER, 659);  // tone d
     delay(400);
-    ledcWriteTone(3, 0);
+    ledcWriteTone(BUZZER, 0);
     delay(100);
     //
-    ledcWriteTone(3, 659);  // tone d
+    ledcWriteTone(BUZZER, 659);  // tone d
     delay(90);
-    ledcWriteTone(3, 0);
+    ledcWriteTone(BUZZER, 0);
     delay(100);
   } else {
     Serial.println(F("SX128x device not responding !"));

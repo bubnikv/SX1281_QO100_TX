@@ -29,9 +29,21 @@ Adafruit_SSD1306
 
 SX12XX Library - https://github.com/StuartsProjects/SX12XX-LoRa
 
-ESPAsyncWebServer - https://github.com/me-no-dev/ESPAsyncWebServer
+ESPAsyncWebServer - https://github.com/ESP32Async/ESPAsyncWebServer
 
-AsyncTCP - https://github.com/me-no-dev/AsyncTCP
+AsyncTCP - https://github.com/ESP32Async/AsyncTCP
+
+## How to program
+
+Using the latest Arduino 2.XX
+Install the SPIFFS upload plugin https://github.com/espx-cz/arduino-spiffs-upload
+
+Select the ESP32 Dev Module
+Hold RST button + PRG button on the board, then release the RST button.
+Compile and upload.
+
+To compile and upload the SPIFFS filesystem image:
+Press [Ctrl] + [Shift] + [P] on Windows or [⌘] + [Shift] + [P] on MacOS to open the command palette. Search for the Upload SPIFFS to Pico/ESP8266/ESP32 command and click on it.
 
 ## User interface
 ![alt text](https://raw.githubusercontent.com/ok1cdj/SX1281_QO100_TX/main/img/QO100-tx.png)
